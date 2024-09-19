@@ -152,6 +152,13 @@ nav:
       - 将 React 添加到现有项目中: installation/add-react-to-an-existing-project.md
       - 使用 TypeScript: installation/use-typescript.md
     
-
-
-
+    - 描述 UI:
+      - describing-ui/index.md
+      - 你的第一个组件: describing-ui/your-first-component.md
+      - 组件的导入与导出: describing-ui/importing-and-exporting-components.md
+      - 使用 JSX 书写标签语言: describing-ui/writing-markup-with-jsx.md
+      - 在 JSX 中通过大括号使用 JavaScript: describing-ui/javascript-in-jsx-with-curly-braces.md
+      - 将 Props 传递给组件: describing-ui/passing-props-to-a-component.md
+      - 条件渲染: describing-ui/conditional-rendering.md
+      - 渲染列表: describing-ui/rendering-lists.md
+      - 保持组件纯粹: describing-ui/keeping-components-pure.md
