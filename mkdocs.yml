@@ -162,3 +162,11 @@ nav:
       - 条件渲染: describing-ui/conditional-rendering.md
       - 渲染列表: describing-ui/rendering-lists.md
       - 保持组件纯粹: describing-ui/keeping-components-pure.md
+      - 将 UI 视作树: describing-ui/understanding-your-ui-as-a-tree.md
+
+    - 添加交互:
+        - adding-interactivity/index.md
+
+    - 状态管理: index.md
+    - 脱围机制: index.md
+

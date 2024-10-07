@@ -1,2 +1,1 @@
-# docs_react
-React 中文文档
+# React 中文文档
