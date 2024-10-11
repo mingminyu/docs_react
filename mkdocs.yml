@@ -166,6 +166,10 @@ nav:
 
     - 添加交互:
         - adding-interactivity/index.md
+        - 响应事件: adding-interactivity/responding-to-events.md
+        - 组件的内存: adding-interactivity/state-a-components-memory.md
+        - 渲染和提交: adding-interactivity/render-and-commit.md
+        - 状态快照: adding-interactivity/state-as-a-snapshot.md
 
     - 状态管理: index.md
     - 脱围机制: index.md

@@ -195,11 +195,491 @@ const [showMore, setShowMore] = useState(false);
 
 ## 3. 渲染和提交
 
+在你的组件显示在屏幕上之前，它们必须被 React 渲染。了解此过程中的步骤将帮助你思考代码的执行方式并解释其行为。
+
+
+想象一下，你的组件是厨房里的厨师，用食材烹制美味佳肴。在这个场景中，React 是一个服务员，负责接收客户的请求并为他们带来订单。这个请求和提供 UI 的过程分为三个步骤：
+
+- 触发渲染（将用餐者的订单传送到厨房）
+- 渲染组件（在厨房准备订单）
+- 提交给 DOM（将订单放在表格上）
+
+![img.png](../images/steps-request-and-provide-ui.png)
+
 ## 4. 状态快照
+
+与常规 JavaScript 变量不同，React 状态的行为更像是快照。设置它不会更改你已有的状态变量，而是会触发重新渲染。起初这可能令人惊讶！
+
+```js linenums="1" hl_lines="3"
+console.log(count);  // 0
+setCount(count + 1); // Request a re-render with 1
+console.log(count);  // Still 0!
+```
+
+此行为可帮助你避免细微的错误。这是一个小聊天应用。尝试猜测如果你先按 “发送” 然后将收件人更改为 Bob 会发生什么。五秒后 alert 中会出现谁的名字？
+
+```jsx linenums="1" title="App.js"
+import { useState } from 'react';
+
+export default function Form() {
+  const [to, setTo] = useState('Alice');
+  const [message, setMessage] = useState('Hello');
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setTimeout(() => {
+      alert(`You said ${message} to ${to}`);
+    }, 5000);
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <label>
+        To:{' '}
+        <select
+          value={to}
+          onChange={e => setTo(e.target.value)}>
+          <option value="Alice">Alice</option>
+          <option value="Bob">Bob</option>
+        </select>
+      </label>
+      <textarea
+        placeholder="Message"
+        value={message}
+        onChange={e => setMessage(e.target.value)}
+      />
+      <button type="submit">Send</button>
+    </form>
+  );
+}
+```
+
+[状态快照](https://react.nodejs.cn/learn/state-as-a-snapshot) 解释了为什么会这样。设置状态请求新的重新渲染，但不会在已经运行的代码中更改它。因此，在你调用 setScore(score + 1) 之后，score 仍然是 0。
 
 ## 5. 队列一系列状态更新
 
+这个组件有问题：单击 “+3” 只会增加一次分数。
+
+```jsx linenums="1" title="App.js"
+import { useState } from 'react';
+
+export default function Counter() {
+  const [score, setScore] = useState(0);
+
+  function increment() {
+    setScore(score + 1);
+  }
+
+  return (
+    <>
+      <button onClick={() => increment()}>+1</button>
+      <button onClick={() => {
+        increment();
+        increment();
+        increment();
+      }}>+3</button>
+      <h1>Score: {score}</h1>
+    </>
+  )
+}
+```
+
+[状态快照](https://react.nodejs.cn/learn/state-as-a-snapshot) 解释了为什么会这样。设置状态请求新的重新渲染，但不会在已经运行的代码中更改它。因此，在你调用 `setScore(score + 1)` 之后，`score` 仍然是 `0`。
+
+```jsx linenums="1"
+console.log(score);  // 0
+setScore(score + 1); // setScore(0 + 1);
+console.log(score);  // 0
+setScore(score + 1); // setScore(0 + 1);
+console.log(score);  // 0
+setScore(score + 1); // setScore(0 + 1);
+console.log(score);  // 0
+```
+
+你可以通过在设置状态时传递更新程序函数来解决此问题。请注意如何用 `setScore(s => s + 1)` 替换 `setScore(score + 1)` 来修复 “+3” 按钮。这使你可以对多个状态更新进行排队。
+
+```jsx linenums="1" title="App.js" hl_lines="7"
+import { useState } from 'react';
+
+export default function Counter() {
+  const [score, setScore] = useState(0);
+
+  function increment() {
+    setScore(s => s + 1);
+  }
+
+  return (
+    <>
+      <button onClick={() => increment()}>+1</button>
+      <button onClick={() => {
+        increment();
+        increment();
+        increment();
+      }}>+3</button>
+      <h1>Score: {score}</h1>
+    </>
+  )
+}
+```
+
 ## 6. 更新状态中的对象
+
+状态可以保存任何类型的 JavaScript 值，包括对象。但是你不应该直接改变你在 React 状态下持有的对象和数组。而是，当你想更新一个对象和数组时，你需要创建一个新的（或复制一个现有的），然后更新状态以使用该副本。
+
+通常，**你将使用 `...` 扩展语法来复制要更改的对象和数组**。例如，更新嵌套对象可能如下所示：
+
+```jsx linenums="1" title="App.js"
+import { useState } from 'react';
+
+export default function Form() {
+  const [person, setPerson] = useState({
+    name: 'Niki de Saint Phalle',
+    artwork: {
+      title: 'Blue Nana',
+      city: 'Hamburg',
+      image: 'https://i.imgur.com/Sd1AgUOm.jpg',
+    }
+  });
+
+  function handleNameChange(e) {
+    setPerson({
+      ...person,
+      name: e.target.value
+    });
+  }
+
+  function handleTitleChange(e) {
+    setPerson({
+      ...person,
+      artwork: {
+        ...person.artwork,
+        title: e.target.value
+      }
+    });
+  }
+
+  function handleCityChange(e) {
+    setPerson({
+      ...person,
+      artwork: {
+        ...person.artwork,
+        city: e.target.value
+      }
+    });
+  }
+
+  function handleImageChange(e) {
+    setPerson({
+      ...person,
+      artwork: {
+        ...person.artwork,
+        image: e.target.value
+      }
+    });
+  }
+
+  return (
+    <>
+      <label>
+        Name:
+        <input
+          value={person.name}
+          onChange={handleNameChange}
+        />
+      </label>
+      <label>
+        Title:
+        <input
+          value={person.artwork.title}
+          onChange={handleTitleChange}
+        />
+      </label>
+      <label>
+        City:
+        <input
+          value={person.artwork.city}
+          onChange={handleCityChange}
+        />
+      </label>
+      <label>
+        Image:
+        <input
+          value={person.artwork.image}
+          onChange={handleImageChange}
+        />
+      </label>
+      <p>
+        <i>{person.artwork.title}</i>
+        {' by '}
+        {person.name}
+        <br />
+        (located in {person.artwork.city})
+      </p>
+      <img
+        src={person.artwork.image}
+        alt={person.artwork.title}
+      />
+    </>
+  );
+}
+```
+
+如果在代码中复制对象变得乏味，你可以使用像 [Immer](https://github.com/immerjs/use-immer) 这样的库来减少重复代码：
+
+???+ example "示例"
+
+    === "package.json"
+
+        ```json linenums="1"
+        {
+          "dependencies": {
+            "immer": "1.7.3",
+            "react": "latest",
+            "react-dom": "latest",
+            "react-scripts": "latest",
+            "use-immer": "0.5.1"
+          },
+          "scripts": {
+            "start": "react-scripts start",
+            "build": "react-scripts build",
+            "test": "react-scripts test --env=jsdom",
+            "eject": "react-scripts eject"
+          },
+          "devDependencies": {}
+        }
+        ```
+    
+    === "App.js"    
+
+        ```jsx linenums="1"
+        import { useImmer } from 'use-immer';
+        
+        export default function Form() {
+          const [person, updatePerson] = useImmer({
+            name: 'Niki de Saint Phalle',
+            artwork: {
+              title: 'Blue Nana',
+              city: 'Hamburg',
+              image: 'https://i.imgur.com/Sd1AgUOm.jpg',
+            }
+          });
+        
+          function handleNameChange(e) {
+            updatePerson(draft => {
+              draft.name = e.target.value;
+            });
+          }
+        
+          function handleTitleChange(e) {
+            updatePerson(draft => {
+              draft.artwork.title = e.target.value;
+            });
+          }
+        
+          function handleCityChange(e) {
+            updatePerson(draft => {
+              draft.artwork.city = e.target.value;
+            });
+          }
+        
+          function handleImageChange(e) {
+            updatePerson(draft => {
+              draft.artwork.image = e.target.value;
+            });
+          }
+        
+          return (
+            <>
+              <label>
+                Name:
+                <input
+                  value={person.name}
+                  onChange={handleNameChange}
+                />
+              </label>
+              <label>
+                Title:
+                <input
+                  value={person.artwork.title}
+                  onChange={handleTitleChange}
+                />
+              </label>
+              <label>
+                City:
+                <input
+                  value={person.artwork.city}
+                  onChange={handleCityChange}
+                />
+              </label>
+              <label>
+                Image:
+                <input
+                  value={person.artwork.image}
+                  onChange={handleImageChange}
+                />
+              </label>
+              <p>
+                <i>{person.artwork.title}</i>
+                {' by '}
+                {person.name}
+                <br />
+                (located in {person.artwork.city})
+              </p>
+              <img
+                src={person.artwork.image}
+                alt={person.artwork.title}
+              />
+            </>
+          );
+        }
+        ```
 
 ## 7. 更新状态数组
 
+数组是另一种类型的可变 JavaScript 对象，你可以将其存储在状态中，并应将其视为只读。就像对象一样，当你想更新存储在状态中的数组时，你需要创建一个新数组（或复制现有数组），然后设置状态以使用新数组：
+
+```jsx linenums="1" title="App.js"
+import { useState } from 'react';
+
+const initialList = [
+  { id: 0, title: 'Big Bellies', seen: false },
+  { id: 1, title: 'Lunar Landscape', seen: false },
+  { id: 2, title: 'Terracotta Army', seen: true },
+];
+
+export default function BucketList() {
+  const [list, setList] = useState(
+    initialList
+  );
+
+  function handleToggle(artworkId, nextSeen) {
+    setList(list.map(artwork => {
+      if (artwork.id === artworkId) {
+        return { ...artwork, seen: nextSeen };
+      } else {
+        return artwork;
+      }
+    }));
+  }
+
+  return (
+    <>
+      <h1>Art Bucket List</h1>
+      <h2>My list of art to see:</h2>
+      <ItemList
+        artworks={list}
+        onToggle={handleToggle} />
+    </>
+  );
+}
+
+function ItemList({ artworks, onToggle }) {
+  return (
+    <ul>
+      {artworks.map(artwork => (
+        <li key={artwork.id}>
+          <label>
+            <input
+              type="checkbox"
+              checked={artwork.seen}
+              onChange={e => {
+                onToggle(
+                  artwork.id,
+                  e.target.checked
+                );
+              }}
+            />
+            {artwork.title}
+          </label>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+如果在代码中复制数组变得乏味，你可以使用像 [Immer](https://github.com/immerjs/use-immer) 这样的库来减少重复代码：
+
+???+ example "示例"
+
+    === "package.json"
+
+        ```json linenums="1"
+        {
+          "dependencies": {
+            "immer": "1.7.3",
+            "react": "latest",
+            "react-dom": "latest",
+            "react-scripts": "latest",
+            "use-immer": "0.5.1"
+          },
+          "scripts": {
+            "start": "react-scripts start",
+            "build": "react-scripts build",
+            "test": "react-scripts test --env=jsdom",
+            "eject": "react-scripts eject"
+          },
+          "devDependencies": {}
+        }
+        ```
+    
+    === "App.js"    
+
+        ```jsx linenums="1"
+        import { useState } from 'react';
+
+        import { useImmer } from 'use-immer';
+        
+        const initialList = [
+          { id: 0, title: 'Big Bellies', seen: false },
+          { id: 1, title: 'Lunar Landscape', seen: false },
+          { id: 2, title: 'Terracotta Army', seen: true },
+        ];
+        
+        export default function BucketList() {
+          const [list, updateList] = useImmer(initialList);
+        
+          function handleToggle(artworkId, nextSeen) {
+            updateList(draft => {
+              const artwork = draft.find(a =>
+                a.id === artworkId
+              );
+              artwork.seen = nextSeen;
+            });
+          }
+        
+          return (
+            <>
+              <h1>Art Bucket List</h1>
+              <h2>My list of art to see:</h2>
+              <ItemList
+                artworks={list}
+                onToggle={handleToggle} />
+            </>
+          );
+        }
+        
+        function ItemList({ artworks, onToggle }) {
+          return (
+            <ul>
+              {artworks.map(artwork => (
+                <li key={artwork.id}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={artwork.seen}
+                      onChange={e => {
+                        onToggle(
+                          artwork.id,
+                          e.target.checked
+                        );
+                      }}
+                    />
+                    {artwork.title}
+                  </label>
+                </li>
+              ))}
+            </ul>
+          );
+        }
+        ```
